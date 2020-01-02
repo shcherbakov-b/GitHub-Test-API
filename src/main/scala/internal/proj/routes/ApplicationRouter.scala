@@ -1,5 +1,5 @@
 package internal.proj.routes
 
-class Router {
+object ApplicationRouter {
 
 }

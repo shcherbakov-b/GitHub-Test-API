@@ -1,3 +1,3 @@
 package internal.proj.models
 
-case class Repo()
+case class Repo(name: String, contributorsUrl: String)
