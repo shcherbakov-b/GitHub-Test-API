@@ -8,6 +8,9 @@ trait SearchService[F[_]] {
 
   def repos(orgName: String)(implicit decoder: EntityDecoder[F, List[Repo]]): F[List[Repo]]
 
-  def contributors(repo: Repo): F[List[Contributor]]
+  def contributors(repo: Repo)(implicit decoder: EntityDecoder[F, List[Contributor]]): F[List[Contributor]]
+
+  def allContributors(repos: List[Repo])(implicit decoder: EntityDecoder[F, List[Contributor]]): F[List[Contributor]]
+
 
 }

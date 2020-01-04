@@ -5,7 +5,7 @@ version := "0.1"
 scalaVersion := "2.13.1"
 
 
-val http4sVersion = "0.21.0-M5"
+val http4sVersion = "0.21.0-M6"
 val circeVersion = "0.12.2"
 
 // Only necessary for SNAPSHOT releases
