@@ -12,18 +12,24 @@ import internal.proj.utils.PageExtractor
 import org.http4s._
 import org.http4s.client.Client
 import org.http4s.headers.{Accept, Authorization}
+import org.slf4j.LoggerFactory
 
 class GitHubService[F[_] : Sync](
   httpClient: Client[F],
   token: Option[String]) extends SearchService[F] {
 
+  private val logger = LoggerFactory.getLogger(getClass)
+
   def repos(orgName: String): F[Either[DomainError, List[Repo]]] =
     httpClient.fetch(createRequest(Uri.unsafeFromString(GitHubRoutes.reposRoute(orgName))))(nextPage)
 
   def contributors(repo: Repo): F[Either[DomainError, List[Contributor]]] =
-    httpClient.fetch(createRequest(Uri.unsafeFromString(repo.contributorsUrl))) { response =>
-      contributorsDecoder.decode(response, strict = false)
-        .leftMap[DomainError](error => DecodeFailed(error.getMessage())).value
+    httpClient.fetch(createRequest(Uri.unsafeFromString(repo.contributorsUrl))) {
+      case response if response.status == Status.Ok =>
+        contributorsDecoder.decode(response, strict = false)
+          .leftMap[DomainError](error => DecodeFailed(error.getMessage())).value
+      case any => logger.warn(s"Got response with status - ${any.status.code}")
+        List.empty[Contributor].asRight[DomainError].pure[F]
     }
 
   def allContributors(repos: List[Repo]): F[Either[DomainError, List[Contributor]]] =

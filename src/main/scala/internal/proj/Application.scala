@@ -8,6 +8,7 @@ import org.http4s.client.blaze.BlazeClientBuilder
 import org.http4s.server.blaze.BlazeServerBuilder
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration._
 
 object Application extends IOApp {
 
@@ -19,6 +20,8 @@ object Application extends IOApp {
     (for {
       client <- BlazeClientBuilder[IO](global).resource
       server <- BlazeServerBuilder[IO]
+        .withResponseHeaderTimeout(120.seconds)
+        .withIdleTimeout(130.seconds)
         .bindHttp(8080, "localhost")
         .withHttpApp(new ApplicationRouter[IO](new GitHubService[IO](client, token)).routes)
         .resource
