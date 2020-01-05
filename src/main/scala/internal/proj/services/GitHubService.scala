@@ -28,7 +28,9 @@ class GitHubService[F[_] : Sync](
       case response if response.status == Status.Ok =>
         contributorsDecoder.decode(response, strict = false)
           .leftMap[DomainError](error => DecodeFailed(error.getMessage())).value
-      case any => logger.warn(s"Got response with status - ${any.status.code}")
+      case any =>
+        logger.warn(s"Failed to get info from repo - ${repo.name}. " +
+          s"Received response with status - ${any.status.code}")
         List.empty[Contributor].asRight[DomainError].pure[F]
     }
 
