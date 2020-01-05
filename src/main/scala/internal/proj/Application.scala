@@ -16,7 +16,6 @@ object Application extends IOApp {
   private val token = Option(System.getenv("GH_TOKEN"))
 
   override def run(args: List[String]): IO[ExitCode] = {
-    println(token)
     (for {
       client <- BlazeClientBuilder[IO](global).resource
       server <- BlazeServerBuilder[IO]
