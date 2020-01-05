@@ -7,11 +7,13 @@ scalaVersion := "2.13.1"
 
 val http4sVersion = "0.21.0-M6"
 val circeVersion = "0.12.2"
+val kindProjectorVersion = "0.11.0"
 
 // Only necessary for SNAPSHOT releases
 resolvers += Resolver.sonatypeRepo("snapshots")
 
 libraryDependencies ++= Seq(
+  compilerPlugin("org.typelevel" %% "kind-projector" % kindProjectorVersion cross CrossVersion.full),
   "org.http4s" %% "http4s-dsl" % http4sVersion,
   "org.http4s" %% "http4s-blaze-server" % http4sVersion,
   "org.http4s" %% "http4s-blaze-client" % http4sVersion,

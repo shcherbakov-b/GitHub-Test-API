@@ -3,10 +3,12 @@ package internal.proj.utils
 import org.http4s.headers.Link
 import org.http4s.util.CaseInsensitiveString
 import org.http4s.{Response, Uri}
+import org.http4s.syntax.string._
+
 
 object PageExtractor {
 
-  val HEADER_LINK: CaseInsensitiveString = CaseInsensitiveString("Link")
+  val HEADER_LINK: CaseInsensitiveString = "Link".ci
 
   val META_NEXT = "next"
 

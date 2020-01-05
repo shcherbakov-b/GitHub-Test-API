@@ -1,34 +1,31 @@
 package internal.proj
 
-import cats.effect.{ExitCode, IO, IOApp}
+import cats.effect.{ContextShift, ExitCode, IO, IOApp}
+import cats.syntax.functor._
+import internal.proj.routes.ApplicationRouter
 import internal.proj.services.GitHubService
 import org.http4s.client.blaze.BlazeClientBuilder
-import org.http4s.client.blaze._
-import org.http4s.client._
-import internal.proj.codecs._
-import internal.proj.models.{Contributor, Repo}
-import org.http4s.circe._
+import org.http4s.server.blaze.BlazeServerBuilder
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
 object Application extends IOApp {
 
-  implicit val decoder = jsonOf[IO, List[Repo]]
-  implicit val decoder2 = jsonOf[IO, List[Contributor]]
+  implicit val cs: ContextShift[IO] = IO.contextShift(global)
 
-  override def run(args: List[String]): IO[ExitCode] = BlazeClientBuilder[IO](global)
-    .resource.use { client =>
-    val service = new GitHubService(client)
-    for {
-      repos <- service.repos("wserverv")
-      contributors <- service.allContributors(repos)
+  private val token = Option(System.getenv("GH_TOKEN"))
 
-    } yield {
-      contributors.foreach(println)
-      ExitCode.Success
-    }
+  override def run(args: List[String]): IO[ExitCode] = {
+    println(token)
+    (for {
+      client <- BlazeClientBuilder[IO](global).resource
+      server <- BlazeServerBuilder[IO]
+        .bindHttp(8080, "localhost")
+        .withHttpApp(new ApplicationRouter[IO](new GitHubService[IO](client, token)).routes)
+        .resource
+    } yield server)
+      .use(_ => IO.never)
+      .as(ExitCode.Success)
   }
-    // use `client` here and return an `IO`.
-    // the client will be acquired and shut down
-    // automatically each time the `IO` is run.
+
 }

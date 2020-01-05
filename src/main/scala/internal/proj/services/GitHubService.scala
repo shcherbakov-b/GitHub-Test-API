@@ -1,65 +1,61 @@
 package internal.proj.services
 
-import cats.Monad
 import cats.data.EitherT
+import cats.effect.Sync
 import cats.syntax.applicative._
-import cats.syntax.functor._
-import cats.syntax.flatMap._
+import cats.syntax.either._
+import internal.proj.codecs._
+import internal.proj.errors.{DecodeFailed, DomainError}
 import internal.proj.models.{Contributor, Repo}
 import internal.proj.routes.GitHubRoutes
 import internal.proj.utils.PageExtractor
-import org.http4s.{DecodeFailure, DecodeResult, EntityDecoder, Request, Response, Uri}
-import org.http4s.Status.Successful
+import org.http4s._
 import org.http4s.client.Client
+import org.http4s.headers.{Accept, Authorization}
 
-class GitHubService[F[_] : Monad](httpClient: Client[F]) extends SearchService[F] {
+class GitHubService[F[_] : Sync](
+  httpClient: Client[F],
+  token: Option[String]) extends SearchService[F] {
 
-  type DecodeRepos = F[Either[DecodeFailure, List[Repo]]]
+  def repos(orgName: String): F[Either[DomainError, List[Repo]]] =
+    httpClient.fetch(createRequest(Uri.unsafeFromString(GitHubRoutes.reposRoute(orgName))))(nextPage)
 
-  def repos(orgName: String)(implicit decoder: EntityDecoder[F, List[Repo]]): F[List[Repo]] =
-    httpClient.get[List[Repo]](GitHubRoutes.reposRoute(orgName)) { response =>
-      nextPage(response).map(_.getOrElse(List.empty))
-      //      case Successful(resp) =>
-      //        println(PageExtractor.next(resp))
-      //        val r = decoder.decode(resp, strict = false)
-      //          .leftMap { error =>
-      //            print(error)
-      //            List.empty[Repo]
-      //          }.merge
-      //        r.map { repos =>
-      //          print(repos)
-      //          repos
-      //        }
-      //
-      //      case _ => List.empty[Repo].pure[F]
+  def contributors(repo: Repo): F[Either[DomainError, List[Contributor]]] =
+    httpClient.fetch(createRequest(Uri.unsafeFromString(repo.contributorsUrl))) { response =>
+      contributorsDecoder.decode(response, strict = false)
+        .leftMap[DomainError](error => DecodeFailed(error.getMessage())).value
     }
 
-  def contributors(repo: Repo)(implicit decoder: EntityDecoder[F, List[Contributor]]): F[List[Contributor]] =
-    httpClient.fetch(Request[F](uri = Uri.unsafeFromString(repo.contributorsUrl))) { response =>
-      decoder.decode(response, strict = false).leftMap { error =>
-        println(error)
-        List.empty[Contributor]
-      }.merge
-    }
+  def allContributors(repos: List[Repo]): F[Either[DomainError, List[Contributor]]] =
+    repos.foldLeft(EitherT(List.empty[Contributor].asRight[DomainError].pure[F])) {
+      (acc, repo) =>
+        for {
+          contributors <- EitherT(contributors(repo))
+          remaining <- acc
+        } yield remaining ++ contributors
+    }.map(_.groupBy(_.login).map(_._2.reduce(_ merge _))).map(_.toList.sorted).value
 
-  def allContributors(repos: List[Repo])(implicit decoder: EntityDecoder[F, List[Contributor]]): F[List[Contributor]] =
-    repos.foldLeft(List.empty[Contributor].pure[F]) {
-      (acc, el) => contributors(el).flatMap(c => acc.map(_ ++ c))
-    }.map(_.groupBy(_.login).map(_._2.reduce(_ merge _))).map(_.toList.sortBy(_.contributions))
-
-  private def nextPage(response: Response[F])(implicit decoder: EntityDecoder[F, List[Repo]]): DecodeRepos = {
+  private def nextPage(response: Response[F]): F[Either[DomainError, List[Repo]]] = {
     val page = PageExtractor.next(response)
-    val result: DecodeResult[F, List[Repo]] = decoder.decode(response, strict = false)
+    val result = reposDecoder.decode(response, strict = false)
+      .leftMap[DomainError](error => DecodeFailed(error.getMessage))
     page match {
       case None => result.value
       case Some(uri) =>
-        val res: F[Either[DecodeFailure, List[Repo]]] = httpClient.get(uri) { resp =>
-          nextPage(resp)
-        }
         (for {
-          next <- EitherT(res)
-          r <- result
-        } yield next ++ r).value
+          next <- EitherT(httpClient.fetch(createRequest(uri))(nextPage))
+          res <- result
+        } yield next ++ res).value
     }
+  }
+
+  private def createRequest(uri: Uri) = {
+    val headers = token.fold(Headers.of(Accept(MediaType.application.json)))(t =>
+      Headers.of(Authorization(Credentials.Token(AuthScheme.Bearer, t)),
+        Accept(MediaType.application.json)))
+    Request[F](
+      uri = uri,
+      headers = headers
+    )
   }
 }
