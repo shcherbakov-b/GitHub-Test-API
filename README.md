@@ -11,3 +11,12 @@ Do not forget to set environment variable **GH_TOKEN**
 
 Application was built with **http4s** and **cats-effects**
 Why those libs? - Because I didn't have a deep knowledge of either **http4s** or **cats-effects**, so I wanted to try :)
+
+#TO DO
+*Add logger*
+
+*Write tests*
+
+*Caching*
+
+*Proper documentation*
