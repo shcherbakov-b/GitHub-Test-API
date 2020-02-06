@@ -11,7 +11,7 @@ import internal.proj.errors._
 import internal.proj.models.{Contributor, Repo}
 import internal.proj.routes.GitHubRoutes
 import internal.proj.utils.GitHubPageExtractor
-import org.http4s.Status.{ClientError, ServerError, Successful}
+import org.http4s.Status.{ClientError, ServerError}
 import org.http4s._
 import org.http4s.client.Client
 import org.http4s.headers.{Accept, Authorization}

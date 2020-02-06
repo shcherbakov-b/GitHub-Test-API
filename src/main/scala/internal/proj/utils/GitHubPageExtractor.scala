@@ -30,7 +30,7 @@ object GitHubPageExtractor {
 
   /**
    * get last page from query params
-   * Note: it is safe here cause if we get Link we always get page
+   * Note: it is safe here cause if we get Link we always get a page
    * @param gitHubUri - uri from Link
    * @return last page
    */
