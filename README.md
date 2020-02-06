@@ -14,8 +14,6 @@ Why these libs? - Because I didn't have a deep knowledge of either **http4s** or
 
 #TO DO
 
-*Add logger*
-
 *Write tests*
 
 *Caching*

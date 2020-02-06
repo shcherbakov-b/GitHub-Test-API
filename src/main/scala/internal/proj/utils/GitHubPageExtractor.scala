@@ -5,7 +5,7 @@ import org.http4s.util.CaseInsensitiveString
 import org.http4s.{Response, Uri}
 import org.http4s.syntax.string._
 
-object PageExtractor {
+object GitHubPageExtractor {
 
   val HeaderLink: CaseInsensitiveString = "Link".ci
 

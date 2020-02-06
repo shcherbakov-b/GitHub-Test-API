@@ -9,7 +9,7 @@ import cats.{Monoid, Parallel}
 import internal.proj.codecs._
 import internal.proj.models.{Contributor, Repo}
 import internal.proj.routes.GitHubRoutes
-import internal.proj.utils.PageExtractor
+import internal.proj.utils.GitHubPageExtractor
 import org.http4s._
 import org.http4s.client.Client
 import org.http4s.headers.{Accept, Authorization}
@@ -65,7 +65,7 @@ class GitHubService[F[_] : Async : Parallel](
    * @return decoded repositories
    */
   private def nextPage(response: Response[F]): F[List[Repo]] = {
-    val pages = PageExtractor.next(response)
+    val pages = GitHubPageExtractor.next(response)
     val result = decode[List[Repo]](response)
     val others = Async.parTraverseN(50)(pages)(uri => httpClient.fetch(createRequest(uri))(decode[List[Repo]]))
     for {
