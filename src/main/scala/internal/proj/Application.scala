@@ -20,8 +20,8 @@ object Application extends IOApp {
     (for {
       client <- BlazeClientBuilder[IO](global).resource
       server <- BlazeServerBuilder[IO]
-        .withResponseHeaderTimeout(120.seconds)
-        .withIdleTimeout(130.seconds)
+        .withResponseHeaderTimeout(160.seconds)
+        .withIdleTimeout(170.seconds)
         .bindHttp(8080, "localhost")
         .withHttpApp(new ApplicationRouter[IO](new GitHubService[IO](client, token)).routes)
         .resource
