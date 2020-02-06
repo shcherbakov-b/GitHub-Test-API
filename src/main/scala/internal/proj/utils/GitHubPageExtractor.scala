@@ -1,9 +1,9 @@
 package internal.proj.utils
 
 import org.http4s.headers.Link
-import org.http4s.util.CaseInsensitiveString
-import org.http4s.{Response, Uri}
 import org.http4s.syntax.string._
+import org.http4s.util.CaseInsensitiveString
+import org.http4s.{Headers, Uri}
 
 object GitHubPageExtractor {
 
@@ -14,11 +14,11 @@ object GitHubPageExtractor {
   /**
    * As GitHub implements Web Linking
    * so we can use such function to fetch all possible pages
-   * @param response first response
+   * @param headers - headers from response
    * @return list of constructed uri
    */
-  def next[F[_]](response: Response[F]): List[Uri] = {
-    response.headers.get(HeaderLink).toList.flatMap {
+  def next(headers: Headers): List[Uri] = {
+    headers.get(HeaderLink).toList.flatMap {
       case Link(l) =>
         val uri = l.values.collect { case value if value.rel.contains(MetaLast) => value.uri }.headOption
         uri.toList.flatMap { uri =>

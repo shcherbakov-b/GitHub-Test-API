@@ -71,7 +71,7 @@ class GitHubService[F[_] : Async : Parallel](
       case ClientError(_) => MonadError[F, Throwable].raiseError(DomainError.OrganizationNotFound())
       case ServerError(_) => MonadError[F, Throwable].raiseError(DomainError.BadResponse())
       case r =>
-        val pages = GitHubPageExtractor.next(r)
+        val pages = GitHubPageExtractor.next(r.headers)
         val result = decode[List[Repo]](r)
         val others = Async.parTraverseN(50)(pages)(uri => httpClient.fetch(createRequest(uri))(decode[List[Repo]]))
         for {
