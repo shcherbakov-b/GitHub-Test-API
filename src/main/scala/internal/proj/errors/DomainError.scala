@@ -1,10 +1,14 @@
 package internal.proj.errors
 
-sealed trait DomainError extends Exception {
-  def message: String
+trait DomainError extends Exception {
   override def getMessage: String = message
+  def message: String
 }
-
-case class DecodeFailed(message: String) extends DomainError
-
-
+object DomainError {
+  case class OrganizationNotFound() extends DomainError {
+    override def message: String = s"Organization not found"
+  }
+  case class BadResponse() extends DomainError {
+    override def message: String = s"Bad response"
+  }
+}

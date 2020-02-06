@@ -2,8 +2,8 @@ package internal.proj.routes
 
 object GitHubRoutes {
 
-  val GitHubApi: String = "https://api.github.com"
+  val GitHubApiUrl: String = "https://api.github.com"
 
-  def reposRoute(orgName: String): String = GitHubApi + s"/orgs/$orgName/repos"
+  def reposRoute(orgName: String): String = GitHubApiUrl + s"/orgs/$orgName/repos"
 
 }
