@@ -1,6 +1,5 @@
 package internal.proj.services
 
-import internal.proj.errors.DomainError
 import internal.proj.models.{Contributor, Repo}
 
 

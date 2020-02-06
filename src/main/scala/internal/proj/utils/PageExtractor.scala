@@ -11,6 +11,12 @@ object PageExtractor {
 
   val MetaLast = "last"
 
+  /**
+   * As GitHub implements Web Linking
+   * use such function to fetch all possible pages
+   * @param response first response
+   * @return list of constructed uri
+   */
   def next[F[_]](response: Response[F]): List[Uri] = {
     response.headers.get(HeaderLink).toList.flatMap {
       case Link(l) =>
