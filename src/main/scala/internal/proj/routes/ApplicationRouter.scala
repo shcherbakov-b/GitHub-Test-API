@@ -1,13 +1,11 @@
 package internal.proj.routes
 
-import cats.data.{EitherT, Kleisli}
+import cats.data.Kleisli
 import cats.effect.Async
 import cats.syntax.applicative._
 import cats.syntax.flatMap._
-import cats.syntax.either._
+import cats.syntax.functor._
 import internal.proj.codecs._
-import internal.proj.errors.DomainError
-import internal.proj.models.{Contributor, Repo}
 import internal.proj.services.SearchService
 import io.circe.syntax._
 import org.http4s.circe._
@@ -23,16 +21,12 @@ class ApplicationRouter[F[_] : Async](service: SearchService[F]) extends Http4sD
   val routes: Kleisli[F, Request[F], Response[F]] = HttpRoutes.of[F] {
     case GET -> Root / "org" / name / "contributors" =>
       (for {
-        startTime <- EitherT(System.currentTimeMillis().asRight[DomainError].pure[F])
-        _ <- EitherT(logger.warn("Start - "  + startTime / 1000).asRight[DomainError].pure[F])
-        repos <- EitherT.liftF[F, DomainError, List[Repo]](service.repos(name))
-        _ <- EitherT(logger.warn("Total repos amount = " + repos.size).asRight[DomainError].pure[F])
-        contributors <- EitherT.liftF[F, DomainError, List[Contributor]](service.allContributors(repos))
-        _ <- EitherT(logger.warn("End - "  + (System.currentTimeMillis() - startTime) / 1000).asRight[DomainError].pure[F])
-      } yield contributors).value.flatMap {
-        case Left(error) => InternalServerError(error.getMessage)
-        case Right(value) => Ok(value.asJson)
-      }
+        _ <- logger.info(s"Received request to collect contributors of organization - $name").pure[F]
+        repos <- service.repos(name)
+        _ <- logger.info("Total repos amount - " + repos.size).pure[F]
+        contributors <- service.allContributors(repos)
+        _ <- logger.info("Finished collection contributors").pure[F]
+      } yield contributors).flatMap(value => Ok(value.asJson))
   }.orNotFound
 
 }
