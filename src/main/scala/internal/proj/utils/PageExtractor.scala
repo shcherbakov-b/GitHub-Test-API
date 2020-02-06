@@ -5,18 +5,29 @@ import org.http4s.util.CaseInsensitiveString
 import org.http4s.{Response, Uri}
 import org.http4s.syntax.string._
 
-
 object PageExtractor {
 
-  val HEADER_LINK: CaseInsensitiveString = "Link".ci
+  val HeaderLink: CaseInsensitiveString = "Link".ci
 
-  val META_NEXT = "next"
+  val MetaLast = "last"
 
-  def next[F[_]](response: Response[F]): Option[Uri] = {
-    response.headers.get(HEADER_LINK).flatMap {
-      case Link(l) => l.values.collect { case value if value.rel.contains(META_NEXT) => value.uri }.headOption
+  def next[F[_]](response: Response[F]): List[Uri] = {
+    response.headers.get(HeaderLink).toList.flatMap {
+      case Link(l) =>
+        val uri = l.values.collect { case value if value.rel.contains(MetaLast) => value.uri }.headOption
+        uri.toList.flatMap { uri =>
+          (for (i <- 2 to extractGitHubPage(uri)) yield buildUri(uri, i)).toList
+        }
     }
 
+  }
+
+  private def extractGitHubPage(gitHubUri: Uri) = {
+    gitHubUri.query.params("page").toInt
+  }
+
+  private def buildUri(base: Uri, pageNumber: Int): Uri = {
+    Uri.unsafeFromString(base.toString.split("=").head + "=" + pageNumber)
   }
 
 }
