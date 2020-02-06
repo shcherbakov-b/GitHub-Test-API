@@ -13,7 +13,7 @@ object PageExtractor {
 
   /**
    * As GitHub implements Web Linking
-   * use such function to fetch all possible pages
+   * so we can use such function to fetch all possible pages
    * @param response first response
    * @return list of constructed uri
    */
