@@ -5,11 +5,13 @@ import cats.instances.list._
 import cats.syntax.applicative._
 import cats.syntax.flatMap._
 import cats.syntax.functor._
-import cats.{Monoid, Parallel}
+import cats.{MonadError, Monoid, Parallel}
 import internal.proj.codecs._
+import internal.proj.errors._
 import internal.proj.models.{Contributor, Repo}
 import internal.proj.routes.GitHubRoutes
 import internal.proj.utils.GitHubPageExtractor
+import org.http4s.Status.{ClientError, ServerError, Successful}
 import org.http4s._
 import org.http4s.client.Client
 import org.http4s.headers.{Accept, Authorization}
@@ -65,13 +67,19 @@ class GitHubService[F[_] : Async : Parallel](
    * @return decoded repositories
    */
   private def nextPage(response: Response[F]): F[List[Repo]] = {
-    val pages = GitHubPageExtractor.next(response)
-    val result = decode[List[Repo]](response)
-    val others = Async.parTraverseN(50)(pages)(uri => httpClient.fetch(createRequest(uri))(decode[List[Repo]]))
-    for {
-      res <- result
-      others <- others
-    } yield others.flatten ++ res
+    response match {
+      case ClientError(_) => MonadError[F, Throwable].raiseError(DomainError.OrganizationNotFound())
+      case ServerError(_) => MonadError[F, Throwable].raiseError(DomainError.BadResponse())
+      case r =>
+        val pages = GitHubPageExtractor.next(r)
+        val result = decode[List[Repo]](r)
+        val others = Async.parTraverseN(50)(pages)(uri => httpClient.fetch(createRequest(uri))(decode[List[Repo]]))
+        for {
+          res <- result
+          others <- others
+        } yield others.flatten ++ res
+    }
+
   }
 
   /**
