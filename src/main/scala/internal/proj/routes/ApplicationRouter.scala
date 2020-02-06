@@ -25,7 +25,7 @@ class ApplicationRouter[F[_] : Async](service: SearchService[F]) extends Http4sD
         repos <- service.repos(name)
         _ <- logger.info("Total repos amount - " + repos.size).pure[F]
         contributors <- service.allContributors(repos)
-        _ <- logger.info("Finished collection contributors").pure[F]
+        _ <- logger.info("Finished collecting list of contributors").pure[F]
       } yield contributors).flatMap(value => Ok(value.asJson))
   }.orNotFound
 
