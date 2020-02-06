@@ -29,7 +29,9 @@ class ApplicationRouter[F[_] : Async](service: SearchService[F]) extends Http4sD
         contributors <- EitherT.liftF[F, Throwable, List[Contributor]](service.allContributors(repos))
         _ <- EitherT.pure[F, Throwable](logger.info("Finished collecting list of contributors"))
       } yield contributors).value.flatMap{
-        case Left(err) => BadRequest(err.getMessage)
+        case Left(err) =>
+          logger.error(s"Failed to collect list of contributors, reason - $err")
+          BadRequest(err.getMessage)
         case Right(value) => Ok(value.asJson)
       }
   }.orNotFound
