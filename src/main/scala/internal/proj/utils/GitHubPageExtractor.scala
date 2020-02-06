@@ -28,6 +28,12 @@ object GitHubPageExtractor {
 
   }
 
+  /**
+   * get last page from query params
+   * Note: it is safe here cause if we get Link we always get page
+   * @param gitHubUri - uri from Link
+   * @return last page
+   */
   private def extractGitHubPage(gitHubUri: Uri) = {
     gitHubUri.query.params("page").toInt
   }
