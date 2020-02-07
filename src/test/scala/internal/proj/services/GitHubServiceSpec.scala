@@ -61,4 +61,20 @@ class GitHubServiceSpec extends AnyFlatSpec with Matchers {
 
   }
 
+  it should "return empty list in case of decode failure" in {
+    val json =
+      """{
+        |   "name" : "FreeGuy",
+        |   "contributions" : 2
+        |  },
+        |  {
+        |    "name" : "Cooler",
+        |    "contributions" : 10
+        |  }""".stripMargin
+    new GitHubService[IO](Client[IO](_ => Resource.pure(Response(body = Stream.emits[IO, Byte](
+      json.getBytes)))), None)
+      .contributors(Repo("empty", "no-matter"))
+      .unsafeRunSync() should be(List.empty)
+  }
+
 }
