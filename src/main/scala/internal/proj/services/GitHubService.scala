@@ -35,7 +35,7 @@ class GitHubService[F[_] : Async : Parallel](
   /**
    * Fetch contributors of given repository
    *
-   * @param repo - organizations's repository
+   * @param repo - organization's repository
    * @return contributors of given repository
    */
   def contributors(repo: Repo): F[List[Contributor]] =

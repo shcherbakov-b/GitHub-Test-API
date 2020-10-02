@@ -22,7 +22,7 @@ object Application extends IOApp {
       server <- BlazeServerBuilder[IO]
         .withResponseHeaderTimeout(160.seconds)
         .withIdleTimeout(170.seconds)
-        .bindHttp(8080, "localhost")
+        .bindHttp(8080, "0.0.0.0")
         .withHttpApp(new ApplicationRouter[IO](new GitHubService[IO](client, token)).routes)
         .resource
     } yield server)
